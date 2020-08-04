@@ -1,0 +1,17 @@
+<%- include('Base'); -%>
+<div class="container">
+<h2 style="font-weight: bolder;" class="mt-3">All Posts</h2>
+
+<% data.forEach(function(item){%>
+
+<article class="media content-section index-article mt-4">
+    <div class="media-body">
+        <div class="article-metadata">
+            <h3 style="font-weight: bold;"><a class="article-title" href=""><%= item.title %></a></h3>
+        </div>
+        <p class="article-content"><%= item.description %></p>
+        <a class="btn btn-primary btn-sm" href="">Read More...</a>
+    </div>
+</article>
+<%}) %>
+</div>
