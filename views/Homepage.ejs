@@ -5,13 +5,17 @@
 <% data.forEach(function(item){%>
 
 
-<article class="media content-section index-article mt-4">
+<article class="media content-section index-article mt-4 border rounded-0 p-4">
     <div class="media-body">
         <div class="article-metadata">
+            <p class="text-danger">posted by <b><%= item.authorname %></b></p>
             <h3 style="font-weight: bold;"><a class="article-title" href=""><%= item.title %></a></h3>
         </div>
         <p class="article-content"><%= item.description %></p>
         <a class="btn btn-primary btn-sm" href="">Read More...</a>
+        <form action="/post/<%= item._id %>" method="POST">
+        <button type="submit">delete post</button>
+        </form>
     </div>
 </article>
 <%}) %>

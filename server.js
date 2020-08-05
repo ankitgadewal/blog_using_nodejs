@@ -12,6 +12,9 @@ const { request } = require('express');
 app.use(session({secret: 'secretsession',saveUninitialized: true,resave: true}));
 const sessio = require('./middleware')
 app.use(sessio)
+var crypto = require('crypto');
+var key = 'password';
+var algo = 'aes256';
 
 //database connection
 mongoose.connect('mongodb+srv://ankit:mypassword@cluster0.ecku3.mongodb.net/tutorial?retryWrites=true&w=majority', {
@@ -73,19 +76,22 @@ app.post('/newpost', encoder, function (req, res) {
         data.save().then((result) => {
             res.status(201).json(result);
         })
-            .catch((error) => console.warn(error))
+            .catch((error) => console.warn(error));
     }
     else{
-        res.redirect('/login')
+        res.redirect('/login');
     }
 })
 
 //register users
 app.post('/register', encoder, function (req, res) {
+    var cipher = crypto.createCipher(algo, key);
+    var encrypted = cipher.update(req.body.password, 'utf8', 'hex')
+        + cipher.final('hex');
     const data = new User({
         _id: new mongoose.Types.ObjectId(),
         username: req.body.username,
-        password: req.body.password,
+        password: encrypted,
     })
     data.save().then((result) => {
         res.status(201).json(result);
@@ -97,11 +103,13 @@ app.post('/register', encoder, function (req, res) {
 app.post('/login', encoder, function (req, res) {
     sess = req.session;
     User.findOne({ username: req.body.username }).then((data) => {
+        
         if (data == null) {
             res.send('You are not registered with us')
         }
         else {
-            var decrypted = data.password
+            var decipher = crypto.createDecipher(algo, key);
+            var decrypted = decipher.update(data.password, 'hex', 'utf8') + decipher.final('utf8');
             if (decrypted == req.body.password) {
                 sess = req.session;
                 req.session.cookie.maxAge = 3600000
@@ -109,12 +117,13 @@ app.post('/login', encoder, function (req, res) {
                 res.redirect('/newpost')
             }
             else{
-                res.send('password is incorrect... please try again')
+                res.send('user not exists')
             }
         }
     }).catch((error) => console.warn(error))
 })
 
+//logout a user
 app.post('/logout', encoder, function (req, res) {
     req.session.destroy((err) => {
         if(err) {
@@ -124,4 +133,12 @@ app.post('/logout', encoder, function (req, res) {
     });
 })
 
-app.listen(4000)
+
+//delete a post from frontend
+app.post('/post/:id',encoder, function(req, res){
+    Post.deleteOne({_id:req.params.id}).then((result)=>{
+        res.redirect('/');
+    }).catch((err)=>{console.warn(err)})
+})
+
+app.listen(4000);
