@@ -8,8 +8,12 @@ const mongoose = require('mongoose');
 app.set('view engine', 'ejs');
 app.use('/assets', express.static('assets'));
 const session = require('express-session');
+const { request } = require('express');
 app.use(session({secret: 'secretsession',saveUninitialized: true,resave: true}));
+const sessio = require('./middleware')
+app.use(sessio)
 
+//database connection
 mongoose.connect('mongodb+srv://ankit:mypassword@cluster0.ecku3.mongodb.net/tutorial?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true
