@@ -9,7 +9,7 @@ app.set('view engine', 'ejs');
 app.use('/assets', express.static('assets'));
 const session = require('express-session');
 const { request } = require('express');
-app.use(session({secret: 'secretsession',saveUninitialized: true,resave: true}));
+app.use(session({ secret: 'secretsession', saveUninitialized: true, resave: true }));
 const sessio = require('./middleware')
 app.use(sessio)
 var crypto = require('crypto');
@@ -22,49 +22,55 @@ mongoose.connect('mongodb+srv://ankit:mypassword@cluster0.ecku3.mongodb.net/tuto
     useUnifiedTopology: true
 })
 
-app.get('/', function(req,res){
+app.get('/', function (req, res) {
     Post.find().then((data) => {
-        res.render('Homepage', {data:data})
+        res.render('Homepage', { data: data })
     })
 })
 
 app.get("/register", function (req, res) {
     sess = req.session;
-    if(sess.username){
+    if (sess.username) {
         res.redirect('/newpost')
     }
-    else{
+    else {
         res.render('Register')
     }
 })
 
 app.get("/newpost", function (req, res) {
     sess = req.session;
-    if(sess.username){
+    if (sess.username) {
         res.render('Newpost');
     }
-    else{
+    else {
         res.redirect('/login')
     }
 })
 
 app.get('/login', function (req, res) {
     sess = req.session;
-    if(sess.username){
+    if (sess.username) {
         res.redirect('/newpost')
     }
-    else{
+    else {
         res.render('Login')
     }
+})
+
+app.get('/readmore/:id', function (req, res) {
+    Post.findOne({ _id: req.params.id }).then((data) => {
+        res.render('PostDetail', { data: data })
+    })
 })
 
 //create new post
 app.post('/newpost', encoder, function (req, res) {
     // console.log(req.body);
-    sess = req.session; 
-    if(sess.username) {
+    sess = req.session;
+    if (sess.username) {
         User.findOne({ username: sess.username }).then((data) => {
-            var userid = data.id; 
+            var userid = data.id;
         })
         const data = new Post({
             _id: new mongoose.Types.ObjectId(),
@@ -74,11 +80,11 @@ app.post('/newpost', encoder, function (req, res) {
             authorname: sess.username
         })
         data.save().then((result) => {
-            res.status(201).json(result);
+            res.redirect('/')
         })
             .catch((error) => console.warn(error));
     }
-    else{
+    else {
         res.redirect('/login');
     }
 })
@@ -103,7 +109,7 @@ app.post('/register', encoder, function (req, res) {
 app.post('/login', encoder, function (req, res) {
     sess = req.session;
     User.findOne({ username: req.body.username }).then((data) => {
-        
+
         if (data == null) {
             res.send('You are not registered with us')
         }
@@ -114,9 +120,9 @@ app.post('/login', encoder, function (req, res) {
                 sess = req.session;
                 req.session.cookie.maxAge = 3600000
                 sess.username = req.body.username;
-                res.redirect('/newpost')
+                res.redirect('/')
             }
-            else{
+            else {
                 res.send('user not exists')
             }
         }
@@ -126,7 +132,7 @@ app.post('/login', encoder, function (req, res) {
 //logout a user
 app.post('/logout', encoder, function (req, res) {
     req.session.destroy((err) => {
-        if(err) {
+        if (err) {
             return console.log(err);
         }
         res.redirect('/login')
@@ -135,10 +141,33 @@ app.post('/logout', encoder, function (req, res) {
 
 
 //delete a post from frontend
-app.post('/post/:id',encoder, function(req, res){
-    Post.deleteOne({_id:req.params.id}).then((result)=>{
+app.post('/deletepost/:id', encoder, function (req, res) {
+    Post.deleteOne({ _id: req.params.id }).then((result) => {
         res.redirect('/');
-    }).catch((err)=>{console.warn(err)})
+    }).catch((err) => { console.warn(err) })
+})
+
+//post update api
+app.post('/updatepost/:id', encoder, function (req, res) {
+    Post.updateOne({
+        _id: req.params.id
+    },
+        {
+            $set: {
+                title: req.body.title,
+                description: req.body.description,
+            }
+        }
+    ).then((result) => {
+        res.redirect(`/readmore/${req.params.id}`)
+    }).catch((err) => { console.warn(err) })
+})
+
+app.get("/search", function(req, res){
+    var regex = new RegExp(req.query.query, 'i');
+    Post.find({title:regex}).then((data)=>{
+        res.render('Search', {data:data})
+    })
 })
 
 app.listen(4000);
